@@ -50,9 +50,8 @@ function init() {
   renderer.setSize(renderSize.x, renderSize.y)
   renderer.setClearColor(0x000000, 1.0)
 
-  // camera = new THREE.PerspectiveCamera(35, renderSize.x/renderSize.y, 0.01, 100)
   camera = new THREE.PerspectiveCamera(45, renderSize.x / renderSize.y, 1, 1000)
-  // camera.position.y = 50
+  camera.position.y = 50
   camera.position.z = 100
 
   container.appendChild(renderer.domElement)
@@ -107,15 +106,15 @@ function KAJE(RENDERER, SCENE, CAMERA) {
 
     let totalWidth = 0
     const gutter = 0 // percentage of TAU 
-    // const gutterRadians = (gutter / 100) * TAU
-    const gutterRadians = 0
+    const gutterRadians = (gutter / 100) * TAU
 
+    // calculate total width
     for (let z = 0; z < textureMetaData.length; z++) {
       totalWidth += textureMetaData[z]
     }
 
+    // calculate theta length for each image
     for (let z = 0; z < textureMetaData.length; z++) {
-      // calculate theta length for each image
       const textureWidth = textureMetaData[z]
       const thetaLength = (textureWidth / totalWidth) * TAU + gutterRadians
       thetas.push(thetaLength)
@@ -123,16 +122,16 @@ function KAJE(RENDERER, SCENE, CAMERA) {
 
     console.log('thetas', thetas)
 
+    // create and rotate cylinder segments using calculated thetas
     for (let i = 0; i < textures.length; i++) {
       console.log(textureMetaData[i], totalWidth, gutterRadians, thetas[i])
+
       let geo = new THREE.CylinderGeometry( 40, 40, 20, 32, 1, true, 0, thetas[i])
       let mat = new THREE.MeshBasicMaterial({
-        // color: 0x00ff00,
-        color: Math.random() * 0xffffff,
-        transparent: true,
-        // wireframe: false,
         // wireframe: true,
         side: THREE.DoubleSide,
+        color: Math.random() * 0xffffff,
+        transparent: true,
         map: textures[i]
       })
 

@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "parcel index.html --open",
     "dev": "webpack serve --mode='development' --output-path='./dist'",
-    "build": "parcel build index.html"
+    "build": "webpack"
   },
   "author": "",
   "license": "ISC",
