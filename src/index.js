@@ -210,16 +210,24 @@ function handleClick(dir) {
 
   newPos = accumulateToIndex(textureWidths, currentIndex)
   newPos += textureWidths[currentIndex] / 2
-  console.log(prevIndex, oldPos, currentIndex, newPos)
 
   const delta = newPos - oldPos
-  const deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
+  let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
+
+  // handle cycles
+  if (currentIndex === textures.length - 1 && prevIndex === 0) {
+    deltaRadians = deltaRadians - TAU
+  } 
+  else if (currentIndex === 0 && prevIndex === textures.length - 1) {
+    deltaRadians = deltaRadians + TAU
+  }
+
   console.log(deltaRadians)
 
-  const currRotation = carouselGroup.rotation
-
-  tween = new TWEEN.Tween(currRotation).to({
-    x: currRotation.x, y: currRotation.y - deltaRadians, z: currRotation.z 
+  tween = new TWEEN.Tween(carouselGroup.rotation).to({
+    x: carouselGroup.rotation.x,
+    y: carouselGroup.rotation.y - deltaRadians,
+    z: carouselGroup.rotation.z 
   }, 500);
 
   tween.start()
