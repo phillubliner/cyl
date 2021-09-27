@@ -19,6 +19,12 @@ module.exports = {
     compress: false,
     port: 8000,
 		writeToDisk: true
-	}
-
+	},
+  resolve: {
+    fallback: {
+      "zlib": false,
+      "path": false,
+      "buffer": false
+    }
+  }
 };
