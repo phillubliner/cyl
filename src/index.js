@@ -13,17 +13,28 @@ let renderSize, renderTarget
 let time = 0.0
 let rafId
 
-let images = [
-  'static/1.png',
-  'static/2.png',
-  'static/3.png',
-  'static/4.png',
-  'static/5.png',
+// let images = [
+  // 'static/1.png',
+  // 'static/2.png',
+  // 'static/3.png',
+  // 'static/4.png',
+  // 'static/5.png',
   // 'static/kaje1.png',
   // 'static/kaje2.jpg',
   // 'static/kaje3.png',
   // 'static/kaje4.jpg',
   // 'static/kaje5.jpg',
+// ]
+let images = [
+  'static/lakaje.hotglue.jpg',
+  'static/lakaje.hotglue-1.jpg',
+  'static/lakaje.hotglue-2.jpg',
+  'static/lakaje.hotglue-3.jpg',
+  'static/lakaje.hotglue-6.jpg',
+  'static/lakaje.hotglue-8.jpg',
+  'static/lakaje.hotglue-10.jpg',
+  'static/lakaje.hotglue-11.jpg',
+  'static/lakaje.hotglue-12.jpg',
 ]
 let textures = []
 let textureWidths = []
@@ -70,7 +81,7 @@ function init() {
   renderer.setClearColor(0x000000, 1.0)
 
   camera = new THREE.PerspectiveCamera(45, renderSize.x / renderSize.y, 1, 1000)
-  camera.position.z = 100
+  camera.position.z = 80 
   camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
 
   container.appendChild(renderer.domElement)
@@ -156,7 +167,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
       let mat = new THREE.MeshBasicMaterial({
         // wireframe: true,
         // side: THREE.DoubleSide,
-        color: Math.random() * 0xffffff,
+        // color: Math.random() * 0xffffff,
         transparent: true,
         map: textures[i]
       })
