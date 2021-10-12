@@ -23,6 +23,7 @@
       width: 100vw;
       display: flex;
       justify-content: center;
+      align-items: center;
     }
 
     button {
@@ -36,6 +37,17 @@
     .left {
       margin-right: 1rem;
     }
+
+    .right {
+      margin-left: 1rem;
+    }
+
+    #caption {
+      color: white;
+      font-size: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -43,6 +55,7 @@
     <div id="three"></div> 
     <div class="controls">
       <button class="left">👈️</button>
+      <div id="caption"></div>
       <button class="right">👉️</button>
     </div>
   	<script src="dist/main.js"></script>

@@ -4,6 +4,7 @@ import { ArrayCamera } from 'three'
 import { text } from 'body-parser'
 
 const container = document.querySelector('#three')
+const captionEl = document.getElementById('caption')
 
 const TAU = Math.PI * 2.0
 
@@ -34,10 +35,22 @@ let images = [
   'static/lakaje.hotglue-11.jpg',
   'static/lakaje.hotglue-12.jpg',
 ]
+let captions = [
+  'Caption 1',
+  'Caption 2',
+  'Caption 3',
+  'Caption 4',
+  'Caption 5',
+  'Caption 6',
+  'Caption 7',
+  'Caption 8',
+  'Caption 9',
+  'Caption 10',
+]
 let textures = []
 let textureHeights = []
 let textureWidths = []
-let textureRatios = [] // height: width
+let textureRatios = [] // height : width
 let minTextureHeight = 0
 let thetas = []
 let textureMidpoints = []
@@ -45,6 +58,7 @@ let currentIndex = 0
 let tween 
 
 const carouselGroup = new THREE.Group()
+let transitioning = false
 
 function createTextures() {
   for (let i = 0; i < images.length; i++) {
@@ -55,11 +69,11 @@ function createTextures() {
       textureHeights.push(image.height)
       textureRatios.push(image.height / image.width)
 
-
       const doneLoading = textureWidths.length === images.length
       if (doneLoading) {
         minTextureHeight = Math.min.apply(null, textureHeights)
         kaje.init()
+        captionEl.innerHTML = captions[0]
       }
     })
   }
@@ -81,8 +95,8 @@ function init() {
   renderer.setSize(renderSize.x, renderSize.y)
   renderer.setClearColor(0x000000, 1.0)
 
-  camera = new THREE.PerspectiveCamera(45, renderSize.x / renderSize.y, 1, 1000)
-  camera.position.z = 2.3 
+  camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
+  camera.position.z = 3.8 
   camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
 
   container.appendChild(renderer.domElement)
@@ -149,7 +163,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
       }
 
       const midpoint = (textureWidth / 2) + accumulatedWidth
-      const midpointRadians = (midpoint / totalWidth) * TAU - (gutterRadians / 2) // compensate for half the width of the gutter
+      const midpointRadians = (midpoint / totalWidth) * TAU - (gutterRadians / 2)
       textureMidpoints.push(midpointRadians)
     }
 
@@ -194,11 +208,15 @@ function KAJE(RENDERER, SCENE, CAMERA) {
 
 // Event Listeners
 document.querySelector('.controls .left').addEventListener('click', () => {
-  handleClick('left')
+  if (!transitioning) {
+    handleClick('left')
+  }
 })
 
 document.querySelector('.controls .right').addEventListener('click', () => {
-  handleClick('right')
+  if (!transitioning) {
+    handleClick('right')
+  }
 })
 
 function handleClick(dir) {
@@ -231,6 +249,8 @@ function handleClick(dir) {
     deltaRadians = deltaRadians + TAU
   }
 
+  transitioning = true
+
   tween = new TWEEN.Tween(carouselGroup.rotation).to({
     x: carouselGroup.rotation.x,
     y: carouselGroup.rotation.y - deltaRadians,
@@ -238,6 +258,13 @@ function handleClick(dir) {
   }, 500);
 
   tween.start()
+
+  setTimeout(() => {
+    transitioning = false
+  }, 500)
+
+  // set caption
+  captionEl.innerHTML = captions[currentIndex]
 }
 
 function accumulateToIndex(arr, index) {
