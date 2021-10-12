@@ -61,19 +61,35 @@ let transitioning = false
 
 function createTextures() {
   for (let i = 0; i < images.length; i++) {
-    textures[i] = new THREE.TextureLoader().load(images[i], (texture) => {
-      // store texture metadata
-      const image = texture.image
-      textureWidths.push(image.width)
-      textureHeights.push(image.height)
-      textureRatios.push(image.height / image.width)
+    textures[i] = new THREE.TextureLoader().load(
+      // url
+      images[i],
 
-      const doneLoading = textureWidths.length === images.length
-      if (doneLoading) {
-        kaje.init()
-        captionEl.innerHTML = captions[0]
-      }
-    })
+      // onLoad callback 
+      (texture) => {
+        // store texture metadata
+        const image = texture.image
+        textureWidths.push(image.width)
+        textureHeights.push(image.height)
+        textureRatios.push(image.height / image.width)
+
+        const doneLoading = textureWidths.length === images.length
+        if (doneLoading) {
+          setTimeout(() => {
+            kaje.init()
+          }, 300)
+          captionEl.innerHTML = captions[0]
+        }
+      },
+
+      // onProgress callback currently not supported
+    	undefined,
+
+    	// onError callback
+    	function ( err ) {
+    		console.error( 'An error happened.' );
+    	}
+    )
   }
 }
 
@@ -94,7 +110,7 @@ function init() {
   renderer.setClearColor(0x000000, 1.0)
 
   camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
-  camera.position.z = 4 
+  camera.position.z = 4
   camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
 
   container.appendChild(renderer.domElement)
