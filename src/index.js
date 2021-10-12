@@ -13,7 +13,7 @@ let renderSize, renderTarget
 let time = 0.0
 let rafId
 
-// let images = [
+let images = [
   // 'static/1.png',
   // 'static/2.png',
   // 'static/3.png',
@@ -24,8 +24,6 @@ let rafId
   // 'static/kaje3.png',
   // 'static/kaje4.jpg',
   // 'static/kaje5.jpg',
-// ]
-let images = [
   'static/lakaje.hotglue.jpg',
   'static/lakaje.hotglue-1.jpg',
   'static/lakaje.hotglue-2.jpg',
@@ -37,22 +35,25 @@ let images = [
   'static/lakaje.hotglue-12.jpg',
 ]
 let textures = []
-let textureWidths = []
 let textureHeights = []
+let textureWidths = []
+let textureRatios = [] // height: width
 let minTextureHeight = 0
 let thetas = []
 let textureMidpoints = []
 let currentIndex = 0
+let tween 
 
 const carouselGroup = new THREE.Group()
-
-let tween 
 
 function createTextures() {
   for (let i = 0; i < images.length; i++) {
     textures[i] = new THREE.TextureLoader().load(images[i], (texture) => {
-      textureWidths.push(texture.image.width)
-      textureHeights.push(texture.image.height)
+      // store texture metadata
+      const image = texture.image
+      textureWidths.push(image.width)
+      textureHeights.push(image.height)
+      textureRatios.push(image.height / image.width)
 
 
       const doneLoading = textureWidths.length === images.length
@@ -81,7 +82,7 @@ function init() {
   renderer.setClearColor(0x000000, 1.0)
 
   camera = new THREE.PerspectiveCamera(45, renderSize.x / renderSize.y, 1, 1000)
-  camera.position.z = 80 
+  camera.position.z = 2.3 
   camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
 
   container.appendChild(renderer.domElement)
@@ -141,29 +142,26 @@ function KAJE(RENDERER, SCENE, CAMERA) {
       thetas.push(thetaLength)
 
       // store texuture midpoints
-      // console.log('reduce', (textureWidth / 2) + textureWidths.slice(0, i + 1).reduce((a, b) => a + b))
       let accumulatedWidth = 0
 
       for (let j = 0; j < i; j++) {
         accumulatedWidth += textureWidths[j]
       }
 
-      console.log('accumulatedWidth', accumulatedWidth)
       const midpoint = (textureWidth / 2) + accumulatedWidth
       const midpointRadians = (midpoint / totalWidth) * TAU + gutterRadians
       textureMidpoints.push(midpointRadians)
     }
 
-    console.log('widths', textureWidths)
-    console.log('thetas', thetas)
-    console.log('midpoints', textureMidpoints)
+    // console.log('widths', textureWidths)
+    // console.log('thetas', thetas)
+    // console.log('midpoints', textureMidpoints)
 
     // create and rotate cylinder segments using calculated thetas
     for (let i = 0; i < textures.length; i++) {
-      console.log(textureHeights[i] / minTextureHeight)
-      const relativeHeight = (textureHeights[i] / minTextureHeight) * 7 
+      const relativeHeight = thetas[i] * textureRatios[i] // cylinder height is 1 so derive height from theta using unitless ratio 
 
-      let geo = new THREE.CylinderGeometry( 40, 40, relativeHeight, 32, 1, true, 0, thetas[i])
+      let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, thetas[i])
       let mat = new THREE.MeshBasicMaterial({
         // wireframe: true,
         // side: THREE.DoubleSide,
@@ -232,8 +230,6 @@ function handleClick(dir) {
   else if (currentIndex === 0 && prevIndex === textures.length - 1) {
     deltaRadians = deltaRadians + TAU
   }
-
-  console.log(deltaRadians)
 
   tween = new TWEEN.Tween(carouselGroup.rotation).to({
     x: carouselGroup.rotation.x,
