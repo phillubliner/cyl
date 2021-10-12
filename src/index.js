@@ -253,14 +253,14 @@ function handleClick(dir) {
     x: carouselGroup.rotation.x,
     y: carouselGroup.rotation.y - deltaRadians,
     z: carouselGroup.rotation.z 
-  }, 450)
+  }, 500)
     .easing(TWEEN.Easing.Quadratic.InOut)
 
   tween.start()
 
   setTimeout(() => {
     transitioning = false
-  }, 450)
+  }, 500)
 
   // set caption
   captionEl.innerHTML = captions[currentIndex]
