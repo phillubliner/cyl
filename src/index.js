@@ -127,7 +127,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
   this.createGeometry = function() {
 
     let totalWidth = 0
-    const gutter = 0 // percentage of TAU 
+    const gutter = 0.5 // percentage of TAU 
     const gutterRadians = (gutter / 100) * TAU
 
     // calculate total width
@@ -138,7 +138,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
     // calculate and store theta length for each image
     for (let i = 0; i < textureWidths.length; i++) {
       const textureWidth = textureWidths[i]
-      const thetaLength = (textureWidth / totalWidth) * TAU + gutterRadians
+      const thetaLength = (textureWidth / totalWidth) * TAU
       thetas.push(thetaLength)
 
       // store texuture midpoints
@@ -149,7 +149,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
       }
 
       const midpoint = (textureWidth / 2) + accumulatedWidth
-      const midpointRadians = (midpoint / totalWidth) * TAU + gutterRadians
+      const midpointRadians = (midpoint / totalWidth) * TAU - (gutterRadians / 2) // compensate for half the width of the gutter
       textureMidpoints.push(midpointRadians)
     }
 
@@ -161,7 +161,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
     for (let i = 0; i < textures.length; i++) {
       const relativeHeight = thetas[i] * textureRatios[i] // cylinder height is 1 so derive height from theta using unitless ratio 
 
-      let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, thetas[i])
+      let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, thetas[i] - gutterRadians)
       let mat = new THREE.MeshBasicMaterial({
         // wireframe: true,
         // side: THREE.DoubleSide,
@@ -176,7 +176,7 @@ function KAJE(RENDERER, SCENE, CAMERA) {
       // calculate rotation
       let calculatedRotation = 0
       for (let j = 0; j < i; j++) {
-        calculatedRotation += (thetas[j] + gutterRadians)
+        calculatedRotation += (thetas[j])
       }
       mesh.rotation.y = calculatedRotation 
 
