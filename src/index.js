@@ -51,7 +51,6 @@ let textures = []
 let textureHeights = []
 let textureWidths = []
 let textureRatios = [] // height : width
-let minTextureHeight = 0
 let thetas = []
 let textureMidpoints = []
 let currentIndex = 0
@@ -71,7 +70,6 @@ function createTextures() {
 
       const doneLoading = textureWidths.length === images.length
       if (doneLoading) {
-        minTextureHeight = Math.min.apply(null, textureHeights)
         kaje.init()
         captionEl.innerHTML = captions[0]
       }
@@ -96,7 +94,7 @@ function init() {
   renderer.setClearColor(0x000000, 1.0)
 
   camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
-  camera.position.z = 3.8 
+  camera.position.z = 4 
   camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
 
   container.appendChild(renderer.domElement)
@@ -255,13 +253,14 @@ function handleClick(dir) {
     x: carouselGroup.rotation.x,
     y: carouselGroup.rotation.y - deltaRadians,
     z: carouselGroup.rotation.z 
-  }, 500);
+  }, 450)
+    .easing(TWEEN.Easing.Quadratic.InOut)
 
   tween.start()
 
   setTimeout(() => {
     transitioning = false
-  }, 500)
+  }, 450)
 
   // set caption
   captionEl.innerHTML = captions[currentIndex]
