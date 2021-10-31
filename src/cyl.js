@@ -6,27 +6,10 @@ var instances = {}
 import * as THREE from 'three'
 import TWEEN from '@tweenjs/tween.js'
 
-const container = document.querySelector('#three')
-const captionEl = document.getElementById('caption')
-const cylEls = Array.from(document.querySelectorAll('.cyl'))
-
-let images = []
-let captions = []
-
-if (!cylEls.length) {
-  console.warn('No elements with `.cyl` selector. Aborting...')
-}
-
-cylEls.forEach((cyl) => {
-  // get info from DOM
-	const c = new Cyl(cyl, {
-    backgroundColor: 0x000000,
-  })
-
-	console.log(c)
-})
-
-function Cyl(el, options) {
+export function Cyl(el, options) {
+  const TAU = Math.PI * 2.0
+  this.time = 0.0
+  this.rafId = 0
 
   this._init = function() {
     // extract info from DOM
@@ -44,6 +27,30 @@ function Cyl(el, options) {
     })
   }
 
+  this._loadTextures = function() {
+    this.textures = []
+    this.textureWidths = []
+    this.textureHeights = []
+    this.textureRatios = []
+
+    for (let i = 0; i < this.imageUrls.length; i++) {
+      this.textures[i] = new THREE.TextureLoader().load(this.imageUrls[i], (texture) => {
+        // store texture metadata
+        const image = texture.image
+        this.textureWidths.push(image.width)
+        this.textureHeights.push(image.height)
+        this.textureRatios.push(image.height / image.width)
+  
+        const doneLoading = this.textureWidths.length === this.imageUrls.length
+        if (doneLoading) {
+          console.log('all textures loaded')
+          this._createScene()
+          this._createGeometries()
+        }
+      })
+    }
+  }
+
   this._createScene = function() {
     // init scene, renderer, camera
     this.scene = new THREE.Scene()
@@ -58,141 +65,44 @@ function Cyl(el, options) {
     this.renderer.setSize(renderSize.x, renderSize.y)
     this.renderer.setClearColor(options.backgroundColor, 1.0)
 
+    el.appendChild(this.renderer.domElement)
+
     this.camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
     this.camera.position.z = 4 
     this.camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
-
-    // create textures and geometries
   }
 
-	this._init()
-	this._createScene()
-}
-
-const TAU = Math.PI * 2.0
-
-let kaje
-let scene, camera, renderer
-let renderSize, renderTarget
-let time = 0.0
-let rafId
-
-let textures = []
-let textureHeights = []
-let textureWidths = []
-let textureRatios = [] // height : width
-let thetas = []
-let textureMidpoints = []
-let currentIndex = 0
-let tween 
-
-const carouselGroup = new THREE.Group()
-let transitioning = false
-
-function createTextures() {
-  for (let i = 0; i < images.length; i++) {
-    textures[i] = new THREE.TextureLoader().load(images[i], (texture) => {
-      // store texture metadata
-      const image = texture.image
-      textureWidths.push(image.width)
-      textureHeights.push(image.height)
-      textureRatios.push(image.height / image.width)
-
-      const doneLoading = textureWidths.length === images.length
-      if (doneLoading) {
-        kaje.init()
-        captionEl.innerHTML = captions[0]
-      }
-    })
-  }
-}
-
-createTextures()
-
-function init() {
-  scene = new THREE.Scene()
-
-  renderSize = new THREE.Vector2(window.innerWidth, window.innerHeight)
-  renderTarget = new THREE.WebGLRenderTarget(renderSize.x * 1.0, renderSize.y * 1.0)
-
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true
-  })
-  renderer.setPixelRatio( window.devicePixelRatio )
-  renderer.setSize(renderSize.x, renderSize.y)
-  renderer.setClearColor(0x000000, 1.0)
-
-  camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
-  camera.position.z = 4 
-  camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
-
-  container.appendChild(renderer.domElement)
-
-  kaje = new KAJE(renderer, scene, camera)
-
-  draw()
-}
-
-init()
-
-function draw() {
-  time += 0.01
-  rafId = requestAnimationFrame(draw)
-  kaje.update()
-  TWEEN.update()
-  renderer.render(scene, camera, renderTarget)
-}
-
-/**
- * KAJE
- * 
- * @param {*} RENDERER 
- * @param {*} SCENE 
- * @param {*} CAMERA 
- */
-
-function KAJE(RENDERER, SCENE, CAMERA) {
-  this.renderer = RENDERER
-  this.scene = SCENE
-  this.camera = CAMERA
-
-	this.textures = textures
-  this.meshes = []
-  this.carouselGroup = carouselGroup
-
-  this.init = function() {
-    console.log('kaje init')
-    this.createGeometry()
-  }
-
-  this.createGeometry = function() {
+  this._createGeometries = function () {
+    this.carouselGroup = new THREE.Group()
+    this.textureMidpoints = []
+    this.thetas = []
+    this.meshes = []
 
     let totalWidth = 0
     const gutter = 0.5 // percentage of TAU 
     const gutterRadians = (gutter / 100) * TAU
 
     // calculate total width
-    for (let i = 0; i < textureWidths.length; i++) {
-      totalWidth += textureWidths[i]
+    for (let i = 0; i < this.textureWidths.length; i++) {
+      totalWidth += this.textureWidths[i]
     }
 
     // calculate and store theta length for each image
-    for (let i = 0; i < textureWidths.length; i++) {
-      const textureWidth = textureWidths[i]
+    for (let i = 0; i < this.textureWidths.length; i++) {
+      const textureWidth = this.textureWidths[i]
       const thetaLength = (textureWidth / totalWidth) * TAU
-      thetas.push(thetaLength)
+      this.thetas.push(thetaLength)
 
       // store texuture midpoints
       let accumulatedWidth = 0
 
       for (let j = 0; j < i; j++) {
-        accumulatedWidth += textureWidths[j]
+        accumulatedWidth += this.textureWidths[j]
       }
 
       const midpoint = (textureWidth / 2) + accumulatedWidth
       const midpointRadians = (midpoint / totalWidth) * TAU - (gutterRadians / 2)
-      textureMidpoints.push(midpointRadians)
+      this.textureMidpoints.push(midpointRadians)
     }
 
     // console.log('widths', textureWidths)
@@ -200,16 +110,16 @@ function KAJE(RENDERER, SCENE, CAMERA) {
     // console.log('midpoints', textureMidpoints)
 
     // create and rotate cylinder segments using calculated thetas
-    for (let i = 0; i < textures.length; i++) {
-      const relativeHeight = thetas[i] * textureRatios[i] // cylinder height is 1 so derive height from theta using unitless ratio 
+    for (let i = 0; i < this.textures.length; i++) {
+      const relativeHeight = this.thetas[i] * this.textureRatios[i] // cylinder height is 1 so derive height from theta using unitless ratio 
 
-      let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, thetas[i] - gutterRadians)
+      let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, this.thetas[i] - gutterRadians)
       let mat = new THREE.MeshBasicMaterial({
         // wireframe: true,
         // side: THREE.DoubleSide,
         // color: Math.random() * 0xffffff,
         transparent: true,
-        map: textures[i]
+        map: this.textures[i]
       })
 
       let mesh = new THREE.Mesh(geo, mat)
@@ -218,22 +128,33 @@ function KAJE(RENDERER, SCENE, CAMERA) {
       // calculate rotation
       let calculatedRotation = 0
       for (let j = 0; j < i; j++) {
-        calculatedRotation += (thetas[j])
+        calculatedRotation += (this.thetas[j])
       }
       mesh.rotation.y = calculatedRotation 
 
       this.carouselGroup.add(mesh)
     }
 
-    this.carouselGroup.rotation.y -= textureMidpoints[0]
+    this.carouselGroup.rotation.y -= this.textureMidpoints[0]
     this.scene.add(this.carouselGroup)
+
+    this._draw()
   }
 
-  this.update = function() {
+  this._draw = function() {
+    this.time += 0.01
+    this.rafId = requestAnimationFrame(this._draw.bind(this))
+    TWEEN.update()
+    this.renderer.render(this.scene, this.camera, this.renderTarget)
   }
 
+	this._init()
+  this._loadTextures() // calls create fns after textures have loaded
 }
 
+/**
+ * ------------- Old -------------
+ */
 // Event Listeners
 document.querySelector('.controls .left').addEventListener('click', () => {
   if (!transitioning) {
