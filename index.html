@@ -8,12 +8,11 @@
 
   <style>
     body, html {
+      background-color: black;
       margin: 0;
-    }
-
-    #three {
-      height: 100vh;
-      width: 100vw;
+      font-family: Helvetica;
+      font-weight: 600;
+      color: white;
     }
 
     .controls {
@@ -51,7 +50,11 @@
     }
 
     .cyl {
-      z-index: -1;
+      height: 60vh;
+      width: 100vw;
+      position: relative;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
     }
     
     .cyl figure {
@@ -63,30 +66,47 @@
       top: 0;
       left: 0;
     }
+
+    p {
+      columns: 2;
+      margin-left: auto;
+      margin-right: auto;
+      width: 60vw;
+
+    }
   </style>
 </head>
 
 <body>
-    <div id="three"></div> 
     <div class="controls">
       <button class="left">👈️</button>
       <div id="caption"></div>
       <button class="right">👉️</button>
     </div>
 
+    <div>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque et justo eget risus sagittis aliquam. Duis eget diam eu leo pretium dictum nec consequat odio. Pellentesque facilisis erat non diam malesuada, nec molestie dolor tincidunt. Vestibulum ultricies dui augue, ac luctus enim auctor nec. Nunc ut quam ligula. Nulla ac erat in sem accumsan fermentum. In tincidunt egestas mi sed feugiat. Sed posuere, urna et facilisis viverra, nisi libero convallis erat, vel imperdiet leo ante vitae urna. Quisque sed libero blandit, tincidunt dui sit amet, hendrerit urna. Suspendisse potenti. Praesent mollis nulla odio, ac ornare erat laoreet id. Integer quis dignissim ante. Maecenas imperdiet rhoncus enim, non rutrum libero vulputate et. Aliquam et vulputate felis. Nullam eget massa ac massa semper laoreet.
+      </p>
+      <p>
+        Proin id aliquam risus. Vivamus at iaculis nunc, quis auctor neque. Morbi vulputate porta nulla, eu consectetur nisl varius ac. Donec vulputate ligula hendrerit dolor fringilla placerat. Nulla neque libero, rutrum tincidunt ullamcorper non, sagittis et metus. Curabitur rutrum, mauris vitae luctus viverra, nisl nunc aliquet quam, lacinia volutpat enim sem et justo. Suspendisse ullamcorper dapibus urna. Ut ornare laoreet tincidunt. Praesent scelerisque purus quis ligula ultricies, quis volutpat nunc gravida. Sed iaculis aliquam mauris, sit amet semper est viverra non. Donec fermentum auctor tincidunt. Nullam eu nunc vestibulum risus pharetra pellentesque eu nec magna. Nam sem orci, volutpat in dui nec, dignissim aliquet quam. Aenean dignissim libero ac libero pharetra, nec ornare orci lacinia. Aenean a nunc eu metus sollicitudin ornare.
+      </p>
+      <p>
+        Nunc lobortis, velit sit amet malesuada pulvinar, est lorem mattis metus, non faucibus nulla nulla vitae risus. Aenean mollis erat ex, in vehicula enim mollis ac. Suspendisse potenti. Nulla mattis mauris ante, at maximus turpis blandit eget. Morbi sit amet iaculis orci, at finibus nisl. Morbi ultricies enim nunc, sit amet fringilla ante tincidunt id. Donec ut malesuada tellus. Vivamus tincidunt ante laoreet dui semper, ut luctus lectus lobortis. Duis dictum, erat sed tristique tempus, ante tortor congue tellus, et placerat nunc eros in erat. Phasellus pulvinar sagittis erat id bibendum. Sed porta bibendum nulla, interdum pellentesque leo euismod a.
+      </p>
+      <p>
+        Aenean eget enim dignissim, mattis dui in, suscipit dui. Donec scelerisque imperdiet urna, a feugiat mi pulvinar in. Cras sed nisi quis metus convallis auctor quis at enim. Proin sodales, turpis et venenatis convallis, urna enim ornare odio, in auctor orci ligula ut ligula. Donec et quam vel nisi ultricies dapibus. Nulla tempus nulla turpis, a iaculis massa vehicula eget. Fusce tincidunt condimentum massa, sed tincidunt quam accumsan ut.
+      </p>
+      <p>
+        Curabitur pulvinar nunc id purus elementum, vel eleifend nisl iaculis. Vivamus id lectus eu lectus molestie placerat. Nunc sagittis lacinia urna at facilisis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus eu odio nibh. Sed in sem vitae nibh vulputate euismod. Ut ipsum nunc, faucibus sit amet sem non, vehicula interdum nisl.
+      </p>
+    </div>
 
     <div class="cyl">
       <figure>
         <img src="static/lakaje.hotglue.jpg" alt="" />
         <figcaption>
           Caption 1
-        </figcaption>
-      </figure>
-
-      <figure>
-        <img src="static/lakaje.hotglue.jpg" alt="" />
-        <figcaption>
-          Caption 2
         </figcaption>
       </figure>
 
@@ -145,6 +165,24 @@
           Caption 10
         </figcaption>
       </figure>
+    </div>
+
+    <div>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque et justo eget risus sagittis aliquam. Duis eget diam eu leo pretium dictum nec consequat odio. Pellentesque facilisis erat non diam malesuada, nec molestie dolor tincidunt. Vestibulum ultricies dui augue, ac luctus enim auctor nec. Nunc ut quam ligula. Nulla ac erat in sem accumsan fermentum. In tincidunt egestas mi sed feugiat. Sed posuere, urna et facilisis viverra, nisi libero convallis erat, vel imperdiet leo ante vitae urna. Quisque sed libero blandit, tincidunt dui sit amet, hendrerit urna. Suspendisse potenti. Praesent mollis nulla odio, ac ornare erat laoreet id. Integer quis dignissim ante. Maecenas imperdiet rhoncus enim, non rutrum libero vulputate et. Aliquam et vulputate felis. Nullam eget massa ac massa semper laoreet.
+      </p>
+      <p>
+        Proin id aliquam risus. Vivamus at iaculis nunc, quis auctor neque. Morbi vulputate porta nulla, eu consectetur nisl varius ac. Donec vulputate ligula hendrerit dolor fringilla placerat. Nulla neque libero, rutrum tincidunt ullamcorper non, sagittis et metus. Curabitur rutrum, mauris vitae luctus viverra, nisl nunc aliquet quam, lacinia volutpat enim sem et justo. Suspendisse ullamcorper dapibus urna. Ut ornare laoreet tincidunt. Praesent scelerisque purus quis ligula ultricies, quis volutpat nunc gravida. Sed iaculis aliquam mauris, sit amet semper est viverra non. Donec fermentum auctor tincidunt. Nullam eu nunc vestibulum risus pharetra pellentesque eu nec magna. Nam sem orci, volutpat in dui nec, dignissim aliquet quam. Aenean dignissim libero ac libero pharetra, nec ornare orci lacinia. Aenean a nunc eu metus sollicitudin ornare.
+      </p>
+      <p>
+        Nunc lobortis, velit sit amet malesuada pulvinar, est lorem mattis metus, non faucibus nulla nulla vitae risus. Aenean mollis erat ex, in vehicula enim mollis ac. Suspendisse potenti. Nulla mattis mauris ante, at maximus turpis blandit eget. Morbi sit amet iaculis orci, at finibus nisl. Morbi ultricies enim nunc, sit amet fringilla ante tincidunt id. Donec ut malesuada tellus. Vivamus tincidunt ante laoreet dui semper, ut luctus lectus lobortis. Duis dictum, erat sed tristique tempus, ante tortor congue tellus, et placerat nunc eros in erat. Phasellus pulvinar sagittis erat id bibendum. Sed porta bibendum nulla, interdum pellentesque leo euismod a.
+      </p>
+      <p>
+        Aenean eget enim dignissim, mattis dui in, suscipit dui. Donec scelerisque imperdiet urna, a feugiat mi pulvinar in. Cras sed nisi quis metus convallis auctor quis at enim. Proin sodales, turpis et venenatis convallis, urna enim ornare odio, in auctor orci ligula ut ligula. Donec et quam vel nisi ultricies dapibus. Nulla tempus nulla turpis, a iaculis massa vehicula eget. Fusce tincidunt condimentum massa, sed tincidunt quam accumsan ut.
+      </p>
+      <p>
+        Curabitur pulvinar nunc id purus elementum, vel eleifend nisl iaculis. Vivamus id lectus eu lectus molestie placerat. Nunc sagittis lacinia urna at facilisis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Phasellus eu odio nibh. Sed in sem vitae nibh vulputate euismod. Ut ipsum nunc, faucibus sit amet sem non, vehicula interdum nisl.
+      </p>
     </div>
 
   	<script src="dist/main.js"></script>

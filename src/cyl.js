@@ -1,16 +1,24 @@
 'use strict'
 
-var GUID = 0
-var instances = {}
-
 import * as THREE from 'three'
 import TWEEN from '@tweenjs/tween.js'
 
+var GUID = 0
+var instances = {}
+
+/**
+ * 
+ * @param {*} el 
+ * @param {*} options 
+ */
 export function Cyl(el, options) {
   const TAU = Math.PI * 2.0
   this.time = 0.0
   this.rafId = 0
+  this.currentIndex = 0
+  this.transitioning = false
 
+  // init functions
   this._init = function() {
     // extract info from DOM
     this.imageUrls = []
@@ -43,7 +51,6 @@ export function Cyl(el, options) {
   
         const doneLoading = this.textureWidths.length === this.imageUrls.length
         if (doneLoading) {
-          console.log('all textures loaded')
           this._createScene()
           this._createGeometries()
         }
@@ -55,7 +62,7 @@ export function Cyl(el, options) {
     // init scene, renderer, camera
     this.scene = new THREE.Scene()
 
-    const renderSize = new THREE.Vector2(window.innerWidth, window.innerHeight)
+    const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -138,6 +145,16 @@ export function Cyl(el, options) {
     this.carouselGroup.rotation.y -= this.textureMidpoints[0]
     this.scene.add(this.carouselGroup)
 
+    fitCameraToCenteredObject(this.camera, this.carouselGroup)
+
+    window.addEventListener('resize', () => {
+      const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
+      this.renderer.setSize(renderSize.x, renderSize.y)
+      this.camera.aspect = (el.offsetWidth / el.offsetHeight)
+      this.camera.updateProjectionMatrix();
+      fitCameraToCenteredObject(this.camera, this.carouselGroup)
+    })
+
     this._draw()
   }
 
@@ -148,75 +165,77 @@ export function Cyl(el, options) {
     this.renderer.render(this.scene, this.camera, this.renderTarget)
   }
 
+  // nav functions
+  this.next = function() {
+    this.handleClick('right')
+  }
+
+  this.prev = function() {
+    this.handleClick('left')
+  }
+
+  this.handleClick = function(dir) {
+    if (this.transitioning) { return }
+
+    let { currentIndex, textureWidths, textures, carouselGroup,  } = this
+
+    const prevIndex = currentIndex
+
+    if (dir === 'left') {
+      currentIndex = currentIndex === 0 ? textures.length - 1 : currentIndex - 1
+    } else {
+      currentIndex = currentIndex === (textures.length - 1) ? 0 : currentIndex + 1
+    }
+  
+    // calculate angle difference
+    let oldPos = 0
+    let newPos = 0
+  
+    oldPos = accumulateToIndex(textureWidths, prevIndex)
+    oldPos += textureWidths[prevIndex] / 2
+  
+    newPos = accumulateToIndex(textureWidths, currentIndex)
+    newPos += textureWidths[currentIndex] / 2
+  
+    const delta = newPos - oldPos
+    let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
+  
+    // handle cycles
+    if (currentIndex === this.textures.length - 1 && prevIndex === 0) {
+      deltaRadians = deltaRadians - TAU
+    } 
+    else if (currentIndex === 0 && prevIndex === textures.length - 1) {
+      deltaRadians = deltaRadians + TAU
+    }
+  
+    this.transitioning = true
+  
+    this.tween = new TWEEN.Tween(carouselGroup.rotation).to({
+      x: carouselGroup.rotation.x,
+      y: carouselGroup.rotation.y - deltaRadians,
+      z: carouselGroup.rotation.z 
+    }, 500)
+      .easing(TWEEN.Easing.Quadratic.InOut)
+  
+    this.tween.start()
+  
+    setTimeout(() => {
+      this.transitioning = false
+    }, 500)
+  }
+
+  // kickoff
 	this._init()
   this._loadTextures() // calls create fns after textures have loaded
 }
 
 /**
- * ------------- Old -------------
+ * Given an index, returns the sum of the array up to the index element.
+ * 
+ * @param {*} arr
+ * @param {*} index 
+ * @returns 
  */
-// Event Listeners
-document.querySelector('.controls .left').addEventListener('click', () => {
-  if (!transitioning) {
-    handleClick('left')
-  }
-})
-
-document.querySelector('.controls .right').addEventListener('click', () => {
-  if (!transitioning) {
-    handleClick('right')
-  }
-})
-
-function handleClick(dir) {
-  const prevIndex = currentIndex
-
-  if (dir === 'left') {
-    currentIndex = currentIndex === 0 ? textures.length - 1 : currentIndex - 1
-  } else {
-    currentIndex = currentIndex === (textures.length - 1) ? 0 : currentIndex + 1
-  }
-
-  // calculate angle difference
-  let oldPos = 0
-  let newPos = 0
-
-  oldPos = accumulateToIndex(textureWidths, prevIndex)
-  oldPos += textureWidths[prevIndex] / 2
-
-  newPos = accumulateToIndex(textureWidths, currentIndex)
-  newPos += textureWidths[currentIndex] / 2
-
-  const delta = newPos - oldPos
-  let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
-
-  // handle cycles
-  if (currentIndex === textures.length - 1 && prevIndex === 0) {
-    deltaRadians = deltaRadians - TAU
-  } 
-  else if (currentIndex === 0 && prevIndex === textures.length - 1) {
-    deltaRadians = deltaRadians + TAU
-  }
-
-  transitioning = true
-
-  tween = new TWEEN.Tween(carouselGroup.rotation).to({
-    x: carouselGroup.rotation.x,
-    y: carouselGroup.rotation.y - deltaRadians,
-    z: carouselGroup.rotation.z 
-  }, 500)
-    .easing(TWEEN.Easing.Quadratic.InOut)
-
-  tween.start()
-
-  setTimeout(() => {
-    transitioning = false
-  }, 500)
-
-  // set caption
-  captionEl.innerHTML = captions[currentIndex]
-}
-
 function accumulateToIndex(arr, index) {
   let result = 0
 
@@ -225,4 +244,31 @@ function accumulateToIndex(arr, index) {
   }
 
   return result
+}
+
+// https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
+const fitCameraToCenteredObject = function (camera, object, offset) {
+  offset = offset || 1.5
+
+  const boundingBox = new THREE.Box3()
+  
+  boundingBox.setFromObject( object )
+  
+  const center = boundingBox.getCenter( new THREE.Vector3() )
+  const size = boundingBox.getSize( new THREE.Vector3() )
+  
+  const startDistance = center.distanceTo(camera.position)
+  // here we must check if the screen is horizontal or vertical, because camera.fov is
+  // based on the vertical direction.
+  const endDistance = camera.aspect > 1 ?
+    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
+    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
+  
+  
+  camera.position.set(
+    camera.position.x * endDistance / startDistance,
+    camera.position.y * endDistance / startDistance,
+    camera.position.z * endDistance / startDistance,
+  )
+  camera.lookAt(center)
 }

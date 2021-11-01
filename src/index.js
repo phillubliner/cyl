@@ -9,6 +9,13 @@ cylEls.forEach((el) => {
   })
 
 	// c.next(), c.prev()
+	document.querySelector('.controls .left').addEventListener('click', () => {
+		c.prev()
+	})
+
+	document.querySelector('.controls .right').addEventListener('click', () => {
+		c.next()
+	})
 
 	console.log(c)
 })
