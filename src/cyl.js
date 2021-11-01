@@ -225,16 +225,12 @@ export function Cyl(el, options) {
   }
 
   // kickoff
-	this._init()
+  this._init()
   this._loadTextures() // calls create fns after textures have loaded
 }
 
 /**
- * Given an index, returns the sum of the array up to the index element.
- * 
- * @param {*} arr
- * @param {*} index 
- * @returns 
+ * ---------- Utils ---------- 
  */
 function accumulateToIndex(arr, index) {
   let result = 0
