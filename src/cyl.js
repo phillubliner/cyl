@@ -33,6 +33,19 @@ export function Cyl(el, options) {
       this.imageUrls.push(imgEl.src)
       this.captions.push(captionEl.innerText)
     })
+
+    // duplicate images to get a wider cylinder
+    if (this.imageUrls.length <= 4) {
+      this.imageUrls = [
+        ...this.imageUrls,
+        ...this.imageUrls,
+      ]
+
+      this.captions = [
+        ...this.captions,
+        ...this.captions,
+      ]
+    }
   }
 
   this._loadTextures = function() {
@@ -70,13 +83,15 @@ export function Cyl(el, options) {
     })
     this.renderer.setPixelRatio( window.devicePixelRatio )
     this.renderer.setSize(renderSize.x, renderSize.y)
-    this.renderer.setClearColor(options.backgroundColor, 1.0)
+    this.renderer.setClearColor(options.backgroundColor, options.backgroundOpacity)
 
     el.appendChild(this.renderer.domElement)
 
-    this.camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
+    this.camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.01, 1000)
+    // this.camera.position.x = 5
+    // this.camera.position.y = 10 
     this.camera.position.z = 4 
-    this.camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
+    this.camera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0))
   }
 
   this._createGeometries = function () {
@@ -86,8 +101,8 @@ export function Cyl(el, options) {
     this.meshes = []
 
     let totalWidth = 0
-    const gutter = 0.5 // percentage of TAU 
-    const gutterRadians = (gutter / 100) * TAU
+    const gutterPct = (0.5 / 100) // percentage of TAU 
+    const gutterRadians = gutterPct * TAU
 
     // calculate total width
     for (let i = 0; i < this.textureWidths.length; i++) {
@@ -145,14 +160,14 @@ export function Cyl(el, options) {
     this.carouselGroup.rotation.y -= this.textureMidpoints[0]
     this.scene.add(this.carouselGroup)
 
-    fitCameraToCenteredObject(this.camera, this.carouselGroup)
+    fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
 
     window.addEventListener('resize', () => {
       const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
       this.renderer.setSize(renderSize.x, renderSize.y)
       this.camera.aspect = (el.offsetWidth / el.offsetHeight)
       this.camera.updateProjectionMatrix();
-      fitCameraToCenteredObject(this.camera, this.carouselGroup)
+      fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
     })
 
     this._draw()
@@ -211,9 +226,9 @@ export function Cyl(el, options) {
     this.transitioning = true
   
     this.tween = new TWEEN.Tween(carouselGroup.rotation).to({
-      x: carouselGroup.rotation.x,
+      x: 0,
       y: carouselGroup.rotation.y - deltaRadians,
-      z: carouselGroup.rotation.z 
+      z: 0 
     }, 500)
       .easing(TWEEN.Easing.Quadratic.InOut)
   
@@ -242,29 +257,67 @@ function accumulateToIndex(arr, index) {
   return result
 }
 
-// https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
-const fitCameraToCenteredObject = function (camera, object, offset) {
-  offset = offset || 1.5
+function rads(deg) {
+  return deg * (Math.PI / 180) 
+}
 
-  const boundingBox = new THREE.Box3()
-  
-  boundingBox.setFromObject( object )
-  
+function deg(rads) {
+  return rads * (180 / Math.PI) 
+}
+
+// https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
+const fitCameraToCenteredObject = function (camera, scene, object, offset) {
+  // offset = offset || 1.5
+  // offset = -1.5
+  // offset = -0.014
+  // offset = 0.3 
+  offset = 0
+
+
+  object.updateMatrixWorld( true ); // ensure world matrix is up to date
+  console.log(object)
+
+  // create bounding box
+  const boundingBox = new THREE.Box3().setFromObject( object )
+  // boundingBox.applyMatrix4( object.matrixWorld )
   const center = boundingBox.getCenter( new THREE.Vector3() )
   const size = boundingBox.getSize( new THREE.Vector3() )
+  // console.log(boundingBox)
+
+  // render bounding box using a helper
+  const helper = new THREE.Box3Helper( boundingBox, 0xff0000 )
+  scene.add( helper )
+  console.log(helper.box.max, helper.box.min)
   
-  const startDistance = center.distanceTo(camera.position)
-  // here we must check if the screen is horizontal or vertical, because camera.fov is
-  // based on the vertical direction.
-  const endDistance = camera.aspect > 1 ?
-    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
-    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
+
+  // const startDistance = center.distanceTo(camera.position)
+  // // here we must check if the screen is horizontal or vertical, because camera.fov is
+  // // based on the vertical direction.
+  // const endDistance = camera.aspect > 1 ?
+  //   ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
+  //   ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
   
   
-  camera.position.set(
-    camera.position.x * endDistance / startDistance,
-    camera.position.y * endDistance / startDistance,
-    camera.position.z * endDistance / startDistance,
-  )
-  camera.lookAt(center)
+  // camera.position.set(
+  //   camera.position.x * endDistance / startDistance,
+  //   camera.position.y * endDistance / startDistance,
+  //   camera.position.z * endDistance / startDistance,
+  // )
+
+  const fovRads = rads(camera.fov)
+
+  // const fov = deg(Math.atan(1 / camera.position.z))
+  // console.log(fov)
+  // camera.fov = fov
+
+  const z = ((size.y * 2.05) + offset) / Math.abs(Math.tan(camera.fov/2))
+  // const z = ((1/2) + offset) / Math.abs(Math.tan(fovRads/2))
+  // console.log(camera.position)
+  // console.log(0, 0, z)
+  camera.position.set(0, 0, z)
+  // camera.position.set(0, 9, 0)
+  // camera.position.set(0, 9, 4)
+
+  camera.lookAt(new THREE.Vector3(0, 0, 0))
+  // camera.lookAt(center)
 }
