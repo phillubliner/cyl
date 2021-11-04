@@ -107,7 +107,6 @@ export function Cyl(el, options) {
     let totalWidth = 0
     const gutterPct = (0.5 / 100) // percentage of TAU 
     const gutterRadians = gutterPct * TAU
-
     // calculate total width
     for (let i = 0; i < this.textureWidths.length; i++) {
       totalWidth += this.textureWidths[i]
@@ -204,14 +203,14 @@ export function Cyl(el, options) {
   this.handleClick = function(dir) {
     if (this.transitioning) { return }
 
-    let { currentIndex, textureWidths, textures, carouselGroup,  } = this
+    let { textureWidths, textures, carouselGroup } = this
 
-    const prevIndex = currentIndex
+    const prevIndex = this.currentIndex
 
     if (dir === 'left') {
-      currentIndex = currentIndex === 0 ? textures.length - 1 : currentIndex - 1
+      this.currentIndex = this.currentIndex === 0 ? textures.length - 1 : this.currentIndex - 1
     } else {
-      currentIndex = currentIndex === (textures.length - 1) ? 0 : currentIndex + 1
+      this.currentIndex = this.currentIndex === (textures.length - 1) ? 0 : this.currentIndex + 1
     }
   
     // calculate angle difference
@@ -221,17 +220,17 @@ export function Cyl(el, options) {
     oldPos = accumulateToIndex(textureWidths, prevIndex)
     oldPos += textureWidths[prevIndex] / 2
   
-    newPos = accumulateToIndex(textureWidths, currentIndex)
-    newPos += textureWidths[currentIndex] / 2
+    newPos = accumulateToIndex(textureWidths, this.currentIndex)
+    newPos += textureWidths[this.currentIndex] / 2
   
     const delta = newPos - oldPos
     let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
   
     // handle cycles
-    if (currentIndex === this.textures.length - 1 && prevIndex === 0) {
+    if (this.currentIndex === this.textures.length - 1 && prevIndex === 0) {
       deltaRadians = deltaRadians - TAU
     } 
-    else if (currentIndex === 0 && prevIndex === textures.length - 1) {
+    else if (this.currentIndex === 0 && prevIndex === textures.length - 1) {
       deltaRadians = deltaRadians + TAU
     }
   
