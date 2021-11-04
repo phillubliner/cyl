@@ -6,7 +6,7 @@ cylEls.forEach((el) => {
 	const c = new Cyl(el, {
     backgroundColor: 0x000000,
     backgroundOpacity: 0.0,
-		debug: true,
+		debug: false
   })
 
 	el.querySelector('.controls .left').addEventListener('click', () => {
