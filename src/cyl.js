@@ -26,13 +26,14 @@ export function Cyl(el, options) {
 
     const figureEls = Array.from(el.querySelectorAll('figure'))
 
-    figureEls.forEach(fig => {
+    for (let i = 0; i < figureEls.length; i++) {
+      const fig = figureEls[i]
       const imgEl = fig.querySelector('img')
       const captionEl = fig.querySelector('figcaption')
 
       this.imageUrls.push(imgEl.src)
       this.captions.push(captionEl.innerText)
-    })
+    }
 
     // duplicate images to get a wider cylinder
     if (this.imageUrls.length <= 4) {
@@ -49,20 +50,24 @@ export function Cyl(el, options) {
   }
 
   this._loadTextures = function() {
-    this.textures = []
-    this.textureWidths = []
-    this.textureHeights = []
-    this.textureRatios = []
+    this.textures = Array(this.imageUrls.length)
+    this.textureWidths = Array(this.imageUrls.length)
+    this.textureHeights = Array(this.imageUrls.length)
+    this.textureRatios = Array(this.imageUrls.length)
+
+    this.loadedTextures = 0
 
     for (let i = 0; i < this.imageUrls.length; i++) {
       this.textures[i] = new THREE.TextureLoader().load(this.imageUrls[i], (texture) => {
         // store texture metadata
         const image = texture.image
-        this.textureWidths.push(image.width)
-        this.textureHeights.push(image.height)
-        this.textureRatios.push(image.height / image.width)
+        this.textureWidths[i] = image.width
+        this.textureHeights[i] = image.height
+        this.textureRatios[i] = (image.height / image.width)
+
+        this.loadedTextures++
   
-        const doneLoading = this.textureWidths.length === this.imageUrls.length
+        const doneLoading = this.loadedTextures === this.imageUrls.length
         if (doneLoading) {
           this._createScene()
           this._createGeometries()
