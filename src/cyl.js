@@ -26,30 +26,48 @@ export function Cyl(el, options) {
 
     const figureEls = Array.from(el.querySelectorAll('figure'))
 
-    figureEls.forEach(fig => {
+    for (let i = 0; i < figureEls.length; i++) {
+      const fig = figureEls[i]
       const imgEl = fig.querySelector('img')
       const captionEl = fig.querySelector('figcaption')
 
       this.imageUrls.push(imgEl.src)
       this.captions.push(captionEl.innerText)
-    })
+    }
+
+    // duplicate images to get a wider cylinder
+    if (this.imageUrls.length <= 4) {
+      this.imageUrls = [
+        ...this.imageUrls,
+        ...this.imageUrls,
+      ]
+
+      this.captions = [
+        ...this.captions,
+        ...this.captions,
+      ]
+    }
   }
 
   this._loadTextures = function() {
-    this.textures = []
-    this.textureWidths = []
-    this.textureHeights = []
-    this.textureRatios = []
+    this.textures = Array(this.imageUrls.length)
+    this.textureWidths = Array(this.imageUrls.length)
+    this.textureHeights = Array(this.imageUrls.length)
+    this.textureRatios = Array(this.imageUrls.length)
+
+    this.loadedTextures = 0
 
     for (let i = 0; i < this.imageUrls.length; i++) {
       this.textures[i] = new THREE.TextureLoader().load(this.imageUrls[i], (texture) => {
         // store texture metadata
         const image = texture.image
-        this.textureWidths.push(image.width)
-        this.textureHeights.push(image.height)
-        this.textureRatios.push(image.height / image.width)
+        this.textureWidths[i] = image.width
+        this.textureHeights[i] = image.height
+        this.textureRatios[i] = (image.height / image.width)
+
+        this.loadedTextures++
   
-        const doneLoading = this.textureWidths.length === this.imageUrls.length
+        const doneLoading = this.loadedTextures === this.imageUrls.length
         if (doneLoading) {
           this._createScene()
           this._createGeometries()
@@ -70,13 +88,14 @@ export function Cyl(el, options) {
     })
     this.renderer.setPixelRatio( window.devicePixelRatio )
     this.renderer.setSize(renderSize.x, renderSize.y)
-    this.renderer.setClearColor(options.backgroundColor, 1.0)
+    this.renderer.setClearColor(options.backgroundColor, options.backgroundOpacity)
 
     el.appendChild(this.renderer.domElement)
 
-    this.camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.1, 1000)
+    this.camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.01, 1000)
+    // this.camera.position.x = 5
+    // this.camera.position.y = 10 
     this.camera.position.z = 4 
-    this.camera.lookAt(new THREE.Vector3(0.0,0.0,0.0))
   }
 
   this._createGeometries = function () {
@@ -86,9 +105,8 @@ export function Cyl(el, options) {
     this.meshes = []
 
     let totalWidth = 0
-    const gutter = 0.5 // percentage of TAU 
-    const gutterRadians = (gutter / 100) * TAU
-
+    const gutterPct = (0.5 / 100) // percentage of TAU 
+    const gutterRadians = gutterPct * TAU
     // calculate total width
     for (let i = 0; i < this.textureWidths.length; i++) {
       totalWidth += this.textureWidths[i]
@@ -123,7 +141,7 @@ export function Cyl(el, options) {
       let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, this.thetas[i] - gutterRadians)
       let mat = new THREE.MeshBasicMaterial({
         // wireframe: true,
-        // side: THREE.DoubleSide,
+        side: options.debug ? THREE.DoubleSide : false,
         // color: Math.random() * 0xffffff,
         transparent: true,
         map: this.textures[i]
@@ -145,14 +163,22 @@ export function Cyl(el, options) {
     this.carouselGroup.rotation.y -= this.textureMidpoints[0]
     this.scene.add(this.carouselGroup)
 
-    fitCameraToCenteredObject(this.camera, this.carouselGroup)
+    if (options.debug) {
+      var dotGeometry = new THREE.BufferGeometry();
+      dotGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( new THREE.Vector3().toArray(), 3 ) );
+      var dotMaterial = new THREE.PointsMaterial( { size: 0.1 } );
+      var dot = new THREE.Points( dotGeometry, dotMaterial );
+      this.scene.add( dot );
+    }
+
+    fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
 
     window.addEventListener('resize', () => {
       const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
       this.renderer.setSize(renderSize.x, renderSize.y)
       this.camera.aspect = (el.offsetWidth / el.offsetHeight)
       this.camera.updateProjectionMatrix();
-      fitCameraToCenteredObject(this.camera, this.carouselGroup)
+      fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
     })
 
     this._draw()
@@ -177,14 +203,14 @@ export function Cyl(el, options) {
   this.handleClick = function(dir) {
     if (this.transitioning) { return }
 
-    let { currentIndex, textureWidths, textures, carouselGroup,  } = this
+    let { textureWidths, textures, carouselGroup } = this
 
-    const prevIndex = currentIndex
+    const prevIndex = this.currentIndex
 
     if (dir === 'left') {
-      currentIndex = currentIndex === 0 ? textures.length - 1 : currentIndex - 1
+      this.currentIndex = this.currentIndex === 0 ? textures.length - 1 : this.currentIndex - 1
     } else {
-      currentIndex = currentIndex === (textures.length - 1) ? 0 : currentIndex + 1
+      this.currentIndex = this.currentIndex === (textures.length - 1) ? 0 : this.currentIndex + 1
     }
   
     // calculate angle difference
@@ -194,26 +220,26 @@ export function Cyl(el, options) {
     oldPos = accumulateToIndex(textureWidths, prevIndex)
     oldPos += textureWidths[prevIndex] / 2
   
-    newPos = accumulateToIndex(textureWidths, currentIndex)
-    newPos += textureWidths[currentIndex] / 2
+    newPos = accumulateToIndex(textureWidths, this.currentIndex)
+    newPos += textureWidths[this.currentIndex] / 2
   
     const delta = newPos - oldPos
     let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
   
     // handle cycles
-    if (currentIndex === this.textures.length - 1 && prevIndex === 0) {
+    if (this.currentIndex === this.textures.length - 1 && prevIndex === 0) {
       deltaRadians = deltaRadians - TAU
     } 
-    else if (currentIndex === 0 && prevIndex === textures.length - 1) {
+    else if (this.currentIndex === 0 && prevIndex === textures.length - 1) {
       deltaRadians = deltaRadians + TAU
     }
   
     this.transitioning = true
   
     this.tween = new TWEEN.Tween(carouselGroup.rotation).to({
-      x: carouselGroup.rotation.x,
+      x: 0,
       y: carouselGroup.rotation.y - deltaRadians,
-      z: carouselGroup.rotation.z 
+      z: 0 
     }, 500)
       .easing(TWEEN.Easing.Quadratic.InOut)
   
@@ -242,25 +268,31 @@ function accumulateToIndex(arr, index) {
   return result
 }
 
+function rads(deg) {
+  return deg * (Math.PI / 180) 
+}
+
+function deg(rads) {
+  return rads * (180 / Math.PI) 
+}
+
 // https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
-const fitCameraToCenteredObject = function (camera, object, offset) {
+const fitCameraToCenteredObject = function (camera, scene, object, offset) {
   offset = offset || 1.5
 
-  const boundingBox = new THREE.Box3()
-  
-  boundingBox.setFromObject( object )
-  
+  const boundingBox = new THREE.Box3().setFromObject( object )
+
   const center = boundingBox.getCenter( new THREE.Vector3() )
   const size = boundingBox.getSize( new THREE.Vector3() )
-  
+
   const startDistance = center.distanceTo(camera.position)
   // here we must check if the screen is horizontal or vertical, because camera.fov is
   // based on the vertical direction.
   const endDistance = camera.aspect > 1 ?
     ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
     ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
-  
-  
+
+
   camera.position.set(
     camera.position.x * endDistance / startDistance,
     camera.position.y * endDistance / startDistance,
