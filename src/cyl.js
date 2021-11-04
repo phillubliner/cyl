@@ -96,7 +96,6 @@ export function Cyl(el, options) {
     // this.camera.position.x = 5
     // this.camera.position.y = 10 
     this.camera.position.z = 4 
-    this.camera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0))
   }
 
   this._createGeometries = function () {
@@ -143,7 +142,7 @@ export function Cyl(el, options) {
       let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, this.thetas[i] - gutterRadians)
       let mat = new THREE.MeshBasicMaterial({
         // wireframe: true,
-        // side: THREE.DoubleSide,
+        side: options.debug ? THREE.DoubleSide : false,
         // color: Math.random() * 0xffffff,
         transparent: true,
         map: this.textures[i]
@@ -164,6 +163,14 @@ export function Cyl(el, options) {
 
     this.carouselGroup.rotation.y -= this.textureMidpoints[0]
     this.scene.add(this.carouselGroup)
+
+    if (options.debug) {
+      var dotGeometry = new THREE.BufferGeometry();
+      dotGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( new THREE.Vector3().toArray(), 3 ) );
+      var dotMaterial = new THREE.PointsMaterial( { size: 0.1 } );
+      var dot = new THREE.Points( dotGeometry, dotMaterial );
+      this.scene.add( dot );
+    }
 
     fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
 
@@ -274,9 +281,7 @@ function deg(rads) {
 const fitCameraToCenteredObject = function (camera, scene, object, offset) {
   offset = offset || 1.5
 
-  const boundingBox = new THREE.Box3()
-
-  boundingBox.setFromObject( object )
+  const boundingBox = new THREE.Box3().setFromObject( object )
 
   const center = boundingBox.getCenter( new THREE.Vector3() )
   const size = boundingBox.getSize( new THREE.Vector3() )
