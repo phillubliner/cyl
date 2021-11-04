@@ -267,57 +267,27 @@ function deg(rads) {
 
 // https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
 const fitCameraToCenteredObject = function (camera, scene, object, offset) {
-  // offset = offset || 1.5
-  // offset = -1.5
-  // offset = -0.014
-  // offset = 0.3 
-  offset = 0
+  offset = offset || 1.5
 
+  const boundingBox = new THREE.Box3()
 
-  object.updateMatrixWorld( true ); // ensure world matrix is up to date
-  console.log(object)
+  boundingBox.setFromObject( object )
 
-  // create bounding box
-  const boundingBox = new THREE.Box3().setFromObject( object )
-  // boundingBox.applyMatrix4( object.matrixWorld )
   const center = boundingBox.getCenter( new THREE.Vector3() )
   const size = boundingBox.getSize( new THREE.Vector3() )
-  // console.log(boundingBox)
 
-  // render bounding box using a helper
-  const helper = new THREE.Box3Helper( boundingBox, 0xff0000 )
-  scene.add( helper )
-  console.log(helper.box.max, helper.box.min)
-  
+  const startDistance = center.distanceTo(camera.position)
+  // here we must check if the screen is horizontal or vertical, because camera.fov is
+  // based on the vertical direction.
+  const endDistance = camera.aspect > 1 ?
+    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
+    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
 
-  // const startDistance = center.distanceTo(camera.position)
-  // // here we must check if the screen is horizontal or vertical, because camera.fov is
-  // // based on the vertical direction.
-  // const endDistance = camera.aspect > 1 ?
-  //   ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
-  //   ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
-  
-  
-  // camera.position.set(
-  //   camera.position.x * endDistance / startDistance,
-  //   camera.position.y * endDistance / startDistance,
-  //   camera.position.z * endDistance / startDistance,
-  // )
 
-  const fovRads = rads(camera.fov)
-
-  // const fov = deg(Math.atan(1 / camera.position.z))
-  // console.log(fov)
-  // camera.fov = fov
-
-  const z = ((size.y * 2.05) + offset) / Math.abs(Math.tan(camera.fov/2))
-  // const z = ((1/2) + offset) / Math.abs(Math.tan(fovRads/2))
-  // console.log(camera.position)
-  // console.log(0, 0, z)
-  camera.position.set(0, 0, z)
-  // camera.position.set(0, 9, 0)
-  // camera.position.set(0, 9, 4)
-
-  camera.lookAt(new THREE.Vector3(0, 0, 0))
-  // camera.lookAt(center)
+  camera.position.set(
+    camera.position.x * endDistance / startDistance,
+    camera.position.y * endDistance / startDistance,
+    camera.position.z * endDistance / startDistance,
+  )
+  camera.lookAt(center)
 }
