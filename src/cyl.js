@@ -294,9 +294,12 @@ const fitCameraToCenteredObject = function (camera, scene, object, offset) {
 
 
   camera.position.set(
-    camera.position.x * endDistance / startDistance,
-    camera.position.y * endDistance / startDistance,
+    // camera.position.x * endDistance / startDistance,
+    // camera.position.y * endDistance / startDistance,
+    0,
+    0,
     camera.position.z * endDistance / startDistance,
   )
-  camera.lookAt(center)
+
+  camera.lookAt(0, 0, 0)
 }
