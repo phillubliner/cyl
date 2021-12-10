@@ -140,7 +140,7 @@ export function Cyl(el, options) {
 
       let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, this.thetas[i] - gutterRadians)
       let mat = new THREE.MeshBasicMaterial({
-        // wireframe: true,
+        wireframe: options.debug ? true : false,
         side: options.debug ? THREE.DoubleSide : false,
         // color: Math.random() * 0xffffff,
         transparent: true,
@@ -164,21 +164,26 @@ export function Cyl(el, options) {
     this.scene.add(this.carouselGroup)
 
     if (options.debug) {
+      // center dot
       var dotGeometry = new THREE.BufferGeometry();
       dotGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( new THREE.Vector3().toArray(), 3 ) );
       var dotMaterial = new THREE.PointsMaterial( { size: 0.1 } );
       var dot = new THREE.Points( dotGeometry, dotMaterial );
       this.scene.add( dot );
+
+      // outline bounding box
+      const box = new THREE.BoxHelper(this.carouselGroup, 0xffff00);
+      this.scene.add(box);
     }
 
-    fitCameraToCenteredObject(this.camera, this.carouselGroup)
+    fitCameraToCenteredObject(this.camera, this.carouselGroup, 0, this.scene)
 
     window.addEventListener('resize', () => {
       const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
       this.renderer.setSize(renderSize.x, renderSize.y)
       this.camera.aspect = (el.offsetWidth / el.offsetHeight)
       this.camera.updateProjectionMatrix();
-      fitCameraToCenteredObject(this.camera, this.carouselGroup)
+      fitCameraToCenteredObject(this.camera, this.carouselGroup, 0, this.scene)
     })
 
     this._draw()
@@ -277,28 +282,100 @@ function deg(rads) {
 }
 
 // https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
-const fitCameraToCenteredObject = function (camera, object, offset = 1.5) {
+// const fitCameraToCenteredObject = function (camera, object, offset = 1.5) {
 
-  const boundingBox = new THREE.Box3().setFromObject( object )
+//   const boundingBox = new THREE.Box3().setFromObject( object )
 
-  const center = boundingBox.getCenter( new THREE.Vector3() )
-  const size = boundingBox.getSize( new THREE.Vector3() )
+//   const center = boundingBox.getCenter( new THREE.Vector3() )
+//   const size = boundingBox.getSize( new THREE.Vector3() )
 
-  const startDistance = center.distanceTo(camera.position)
-  // here we must check if the screen is horizontal or vertical, because camera.fov is
-  // based on the vertical direction.
-  const endDistance = camera.aspect > 1 ?
-    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
-    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
+//   const startDistance = center.distanceTo(camera.position)
+//   // here we must check if the screen is horizontal or vertical, because camera.fov is
+//   // based on the vertical direction.
+//   const endDistance = camera.aspect > 1 ?
+//     ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
+//     ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
 
 
-  camera.position.set(
-    // camera.position.x * endDistance / startDistance,
-    // camera.position.y * endDistance / startDistance,
-    0,
-    0,
-    camera.position.z * endDistance / startDistance,
-  )
+//   camera.position.set(
+//     // camera.position.x * endDistance / startDistance,
+//     // camera.position.y * endDistance / startDistance,
+//     0,
+//     0,
+//     camera.position.z * endDistance / startDistance,
+//   )
 
-  camera.lookAt(0, 0, 0)
-}
+//   camera.lookAt(0, 0, 0)
+// }
+
+
+
+// https://wejn.org/2020/12/cracking-the-threejs-object-fitting-nut/
+const fitCameraToCenteredObject = function (
+  camera,
+  object,
+  offset = 0,
+  scene
+) {
+  const boundingBox = new THREE.Box3();
+  boundingBox.setFromObject(object);
+
+  var middle = new THREE.Vector3();
+  var size = new THREE.Vector3();
+  boundingBox.getSize(size);
+  
+
+  // figure out how to fit the box in the view:
+  // 1. figure out horizontal FOV (on non-1.0 aspects)
+  // 2. figure out distance from the object in X and Y planes
+  // 3. select the max distance (to fit both sides in)
+  //
+  // The reason is as follows:
+  //
+  // Imagine a bounding box (BB) is centered at (0,0,0).
+  // Camera has vertical FOV (camera.fov) and horizontal FOV
+  // (camera.fov scaled by aspect, see fovh below)
+  //
+  // Therefore if you want to put the entire object into the field of view,
+  // you have to compute the distance as: z/2 (half of Z size of the BB
+  // protruding towards us) plus for both X and Y size of BB you have to
+  // figure out the distance created by the appropriate FOV.
+  //
+  // The FOV is always a triangle:
+  //
+  //  (size/2)
+  // +--------+
+  // |       /
+  // |      /
+  // |     /
+  // | F° /
+  // |   /
+  // |  /
+  // | /
+  // |/
+  //
+  // F° is half of respective FOV, so to compute the distance (the length
+  // of the straight line) one has to: `size/2 / Math.tan(F)`.
+  //
+  // FTR, from https://threejs.org/docs/#api/en/cameras/PerspectiveCamera
+  // the camera.fov is the vertical FOV.
+
+  const fov = camera.fov * (Math.PI / 180);
+  const fovh = 2 * Math.atan(Math.tan(fov / 2) * camera.aspect);
+  let dx = size.z / 2 + Math.abs(size.x / 2 / Math.tan(fovh / 2));
+  let dy = size.z / 2 + Math.abs(size.y / 2 / Math.tan(fov / 2));
+  let cameraZ = Math.max(dx, dy);
+
+  // offset the camera, if desired (to avoid filling the whole canvas)
+  if (offset !== undefined && offset !== 0) cameraZ *= offset;
+
+  camera.position.set(0, 0, cameraZ);
+
+  // set the far plane of the camera so that it easily encompasses the whole object
+  const minZ = boundingBox.min.z;
+  const cameraToFarEdge = minZ < 0 ? -minZ + cameraZ : cameraZ - minZ;
+
+  camera.far = cameraToFarEdge * 3;
+  camera.updateProjectionMatrix();
+
+};
