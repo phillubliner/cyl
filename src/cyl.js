@@ -171,14 +171,14 @@ export function Cyl(el, options) {
       this.scene.add( dot );
     }
 
-    fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
+    fitCameraToCenteredObject(this.camera, this.carouselGroup)
 
     window.addEventListener('resize', () => {
       const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
       this.renderer.setSize(renderSize.x, renderSize.y)
       this.camera.aspect = (el.offsetWidth / el.offsetHeight)
       this.camera.updateProjectionMatrix();
-      fitCameraToCenteredObject(this.camera, this.scene, this.carouselGroup)
+      fitCameraToCenteredObject(this.camera, this.carouselGroup)
     })
 
     this._draw()
@@ -277,8 +277,7 @@ function deg(rads) {
 }
 
 // https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
-const fitCameraToCenteredObject = function (camera, scene, object, offset) {
-  offset = offset || 1.5
+const fitCameraToCenteredObject = function (camera, object, offset = 1.5) {
 
   const boundingBox = new THREE.Box3().setFromObject( object )
 
