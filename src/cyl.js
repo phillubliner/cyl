@@ -1,133 +1,138 @@
-'use strict'
+"use strict";
 
-import * as THREE from 'three'
-import TWEEN from '@tweenjs/tween.js'
+import * as THREE from "three";
+import TWEEN from "@tweenjs/tween.js";
 
-var GUID = 0
-var instances = {}
+var GUID = 0;
+var instances = {};
 
 /**
- * 
- * @param {*} el 
- * @param {*} options 
+ *
+ * @param {*} el
+ * @param {*} options
  */
 export function Cyl(el, options) {
-  const TAU = Math.PI * 2.0
-  this.time = 0.0
-  this.rafId = 0
-  this.currentIndex = 0
-  this.transitioning = false
+  const TAU = Math.PI * 2.0;
+  this.time = 0.0;
+  this.rafId = 0;
+  this.currentIndex = 0;
+  this.transitioning = false;
 
   // init functions
-  this._init = function() {
+  this._init = function () {
     // extract info from DOM
-    this.imageUrls = []
-    this.captions = []
+    this.imageUrls = [];
+    this.captions = [];
 
-    const figureEls = Array.from(el.querySelectorAll('figure'))
+    const figureEls = Array.from(el.querySelectorAll("figure"));
 
     for (let i = 0; i < figureEls.length; i++) {
-      const fig = figureEls[i]
-      const imgEl = fig.querySelector('img')
-      const captionEl = fig.querySelector('figcaption')
+      const fig = figureEls[i];
+      const imgEl = fig.querySelector("img");
+      const captionEl = fig.querySelector("figcaption");
 
-      this.imageUrls.push(imgEl.src)
-      this.captions.push(captionEl.innerText)
+      this.imageUrls.push(imgEl.src);
+      this.captions.push(captionEl.innerText);
     }
 
     // duplicate images to get a wider cylinder
     if (this.imageUrls.length <= 4) {
-      this.imageUrls = [
-        ...this.imageUrls,
-        ...this.imageUrls,
-      ]
+      this.imageUrls = [...this.imageUrls, ...this.imageUrls];
 
-      this.captions = [
-        ...this.captions,
-        ...this.captions,
-      ]
+      this.captions = [...this.captions, ...this.captions];
     }
-  }
+  };
 
-  this._loadTextures = function() {
-    this.textures = Array(this.imageUrls.length)
-    this.textureWidths = Array(this.imageUrls.length)
-    this.textureHeights = Array(this.imageUrls.length)
-    this.textureRatios = Array(this.imageUrls.length)
+  this._loadTextures = function () {
+    this.textures = Array(this.imageUrls.length);
+    this.textureWidths = Array(this.imageUrls.length);
+    this.textureHeights = Array(this.imageUrls.length);
+    this.textureRatios = Array(this.imageUrls.length);
 
-    this.loadedTextures = 0
+    this.loadedTextures = 0;
 
     for (let i = 0; i < this.imageUrls.length; i++) {
-      this.textures[i] = new THREE.TextureLoader().load(this.imageUrls[i], (texture) => {
-        // store texture metadata
-        const image = texture.image
-        this.textureWidths[i] = image.width
-        this.textureHeights[i] = image.height
-        this.textureRatios[i] = (image.height / image.width)
+      this.textures[i] = new THREE.TextureLoader().load(
+        this.imageUrls[i],
+        (texture) => {
+          // store texture metadata
+          const image = texture.image;
+          this.textureWidths[i] = image.width;
+          this.textureHeights[i] = image.height;
+          this.textureRatios[i] = image.height / image.width;
 
-        this.loadedTextures++
-  
-        const doneLoading = this.loadedTextures === this.imageUrls.length
-        if (doneLoading) {
-          this._createScene()
-          this._createGeometries()
+          this.loadedTextures++;
+
+          const doneLoading = this.loadedTextures === this.imageUrls.length;
+          if (doneLoading) {
+            this._createScene();
+            this._createGeometries();
+          }
         }
-      })
+      );
     }
-  }
+  };
 
-  this._createScene = function() {
+  this._createScene = function () {
     // init scene, renderer, camera
-    this.scene = new THREE.Scene()
+    this.scene = new THREE.Scene();
 
-    const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
+    const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true
-    })
-    this.renderer.setPixelRatio( window.devicePixelRatio )
-    this.renderer.setSize(renderSize.x, renderSize.y)
-    this.renderer.setClearColor(options.backgroundColor, options.backgroundOpacity)
+      alpha: true,
+    });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(renderSize.x, renderSize.y);
+    this.renderer.setClearColor(
+      options.backgroundColor,
+      options.backgroundOpacity
+    );
 
-    el.appendChild(this.renderer.domElement)
+    el.appendChild(this.renderer.domElement);
 
-    this.camera = new THREE.PerspectiveCamera(24, renderSize.x / renderSize.y, 0.01, 1000)
+    this.camera = new THREE.PerspectiveCamera(
+      24,
+      renderSize.x / renderSize.y,
+      0.01,
+      1000
+    );
     // this.camera.position.x = 5
-    // this.camera.position.y = 10 
-    this.camera.position.z = 4 
-  }
+    // this.camera.position.y = 10
+    this.camera.position.z = 4;
+  };
 
   this._createGeometries = function () {
-    this.carouselGroup = new THREE.Group()
-    this.textureMidpoints = []
-    this.thetas = []
-    this.meshes = []
+    this.carouselGroup = new THREE.Group();
+    this.textureMidpoints = [];
+    this.thetas = [];
+    this.meshes = [];
 
-    let totalWidth = 0
-    const gutterPct = (0.5 / 100) // percentage of TAU 
-    const gutterRadians = gutterPct * TAU
+    let totalWidth = 0;
+    const gutterPct = 0.5 / 100; // percentage of TAU
+    const gutterRadians = gutterPct * TAU;
     // calculate total width
     for (let i = 0; i < this.textureWidths.length; i++) {
-      totalWidth += this.textureWidths[i]
+      totalWidth += this.textureWidths[i];
     }
 
     // calculate and store theta length for each image
     for (let i = 0; i < this.textureWidths.length; i++) {
-      const textureWidth = this.textureWidths[i]
-      const thetaLength = (textureWidth / totalWidth) * TAU
-      this.thetas.push(thetaLength)
+      const textureWidth = this.textureWidths[i];
+      const thetaLength = (textureWidth / totalWidth) * TAU;
+      this.thetas.push(thetaLength);
 
       // store texuture midpoints
-      let accumulatedWidth = 0
+      let accumulatedWidth = 0;
 
       for (let j = 0; j < i; j++) {
-        accumulatedWidth += this.textureWidths[j]
+        accumulatedWidth += this.textureWidths[j];
       }
 
-      const midpoint = (textureWidth / 2) + accumulatedWidth
-      const midpointRadians = (midpoint / totalWidth) * TAU - (gutterRadians / 2)
-      this.textureMidpoints.push(midpointRadians)
+      const midpoint = textureWidth / 2 + accumulatedWidth;
+      const midpointRadians = (midpoint / totalWidth) * TAU - gutterRadians / 2;
+      this.textureMidpoints.push(midpointRadians);
     }
 
     // console.log('widths', textureWidths)
@@ -136,185 +141,210 @@ export function Cyl(el, options) {
 
     // create and rotate cylinder segments using calculated thetas
     for (let i = 0; i < this.textures.length; i++) {
-      const relativeHeight = this.thetas[i] * this.textureRatios[i] // cylinder height is 1 so derive height from theta using unitless ratio 
+      const relativeHeight = this.thetas[i] * this.textureRatios[i]; // cylinder height is 1 so derive height from theta using unitless ratio
 
-      let geo = new THREE.CylinderGeometry( 1, 1, relativeHeight, 32, 1, true, 0, this.thetas[i] - gutterRadians)
+      let geo = new THREE.CylinderGeometry(
+        1,
+        1,
+        relativeHeight,
+        32,
+        1,
+        true,
+        0,
+        this.thetas[i] - gutterRadians
+      );
       let mat = new THREE.MeshBasicMaterial({
         wireframe: options.debug ? true : false,
         side: options.debug ? THREE.DoubleSide : false,
         // color: Math.random() * 0xffffff,
         transparent: true,
-        map: this.textures[i]
-      })
+        map: this.textures[i],
+      });
 
-      let mesh = new THREE.Mesh(geo, mat)
-      this.meshes.push(mesh)
+      let mesh = new THREE.Mesh(geo, mat);
+      this.meshes.push(mesh);
 
       // calculate rotation
-      let calculatedRotation = 0
+      let calculatedRotation = 0;
       for (let j = 0; j < i; j++) {
-        calculatedRotation += (this.thetas[j])
+        calculatedRotation += this.thetas[j];
       }
-      mesh.rotation.y = calculatedRotation 
+      mesh.rotation.y = calculatedRotation;
 
-      this.carouselGroup.add(mesh)
+      this.carouselGroup.add(mesh);
     }
 
-    this.carouselGroup.rotation.y -= this.textureMidpoints[0]
-    this.scene.add(this.carouselGroup)
+    this.carouselGroup.rotation.y -= this.textureMidpoints[0];
+    this.scene.add(this.carouselGroup);
 
     if (options.debug) {
       // center dot
       var dotGeometry = new THREE.BufferGeometry();
-      dotGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( new THREE.Vector3().toArray(), 3 ) );
-      var dotMaterial = new THREE.PointsMaterial( { size: 0.1 } );
-      var dot = new THREE.Points( dotGeometry, dotMaterial );
-      this.scene.add( dot );
+      dotGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(new THREE.Vector3().toArray(), 3)
+      );
+      var dotMaterial = new THREE.PointsMaterial({ size: 0.1 });
+      var dot = new THREE.Points(dotGeometry, dotMaterial);
+      this.scene.add(dot);
 
       // outline bounding box
       const box = new THREE.BoxHelper(this.carouselGroup, 0xffff00);
       this.scene.add(box);
     }
 
-   fitCameraToCenteredObject2(this.camera, this.carouselGroup, 0, this.scene);
+    fitCameraToCenteredObject2(this.camera, this.carouselGroup, 1, this.scene);
 
-    window.addEventListener('resize', () => {
-      const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
-      this.renderer.setSize(renderSize.x, renderSize.y)
-      this.camera.aspect = (el.offsetWidth / el.offsetHeight)
+    window.addEventListener("resize", () => {
+      const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight);
+      this.renderer.setSize(renderSize.x, renderSize.y);
+      this.camera.aspect = el.offsetWidth / el.offsetHeight;
       this.camera.updateProjectionMatrix();
-      fitCameraToCenteredObject2(this.camera, this.carouselGroup, 0, this.scene);
-    })
+      fitCameraToCenteredObject2(
+        this.camera,
+        this.carouselGroup,
+        1,
+        this.scene
+      );
+    });
 
-    this._draw()
-  }
+    this._draw();
+  };
 
-  this._draw = function() {
-    this.time += 0.01
-    this.rafId = requestAnimationFrame(this._draw.bind(this))
-    TWEEN.update()
-    this.renderer.render(this.scene, this.camera)
-  }
+  this._draw = function () {
+    this.time += 0.01;
+    this.rafId = requestAnimationFrame(this._draw.bind(this));
+    TWEEN.update();
+    this.renderer.render(this.scene, this.camera);
+  };
 
   // nav functions
-  this.next = function() {
-    this.handleClick('right')
-  }
+  this.next = function () {
+    this.handleClick("right");
+  };
 
-  this.prev = function() {
-    this.handleClick('left')
-  }
+  this.prev = function () {
+    this.handleClick("left");
+  };
 
-  this.handleClick = function(dir) {
-    if (this.transitioning) { return }
-
-    let { textureWidths, textures, carouselGroup } = this
-
-    const prevIndex = this.currentIndex
-
-    if (dir === 'left') {
-      this.currentIndex = this.currentIndex === 0 ? textures.length - 1 : this.currentIndex - 1
-    } else {
-      this.currentIndex = this.currentIndex === (textures.length - 1) ? 0 : this.currentIndex + 1
+  this.handleClick = function (dir) {
+    if (this.transitioning) {
+      return;
     }
-  
+
+    let { textureWidths, textures, carouselGroup } = this;
+
+    const prevIndex = this.currentIndex;
+
+    if (dir === "left") {
+      this.currentIndex =
+        this.currentIndex === 0 ? textures.length - 1 : this.currentIndex - 1;
+    } else {
+      this.currentIndex =
+        this.currentIndex === textures.length - 1 ? 0 : this.currentIndex + 1;
+    }
+
     // calculate angle difference
-    let oldPos = 0
-    let newPos = 0
-  
-    oldPos = accumulateToIndex(textureWidths, prevIndex)
-    oldPos += textureWidths[prevIndex] / 2
-  
-    newPos = accumulateToIndex(textureWidths, this.currentIndex)
-    newPos += textureWidths[this.currentIndex] / 2
-  
-    const delta = newPos - oldPos
-    let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU
-  
+    let oldPos = 0;
+    let newPos = 0;
+
+    oldPos = accumulateToIndex(textureWidths, prevIndex);
+    oldPos += textureWidths[prevIndex] / 2;
+
+    newPos = accumulateToIndex(textureWidths, this.currentIndex);
+    newPos += textureWidths[this.currentIndex] / 2;
+
+    const delta = newPos - oldPos;
+    let deltaRadians = (delta / textureWidths.reduce((a, b) => a + b)) * TAU;
+
     // handle cycles
     if (this.currentIndex === this.textures.length - 1 && prevIndex === 0) {
-      deltaRadians = deltaRadians - TAU
-    } 
-    else if (this.currentIndex === 0 && prevIndex === textures.length - 1) {
-      deltaRadians = deltaRadians + TAU
+      deltaRadians = deltaRadians - TAU;
+    } else if (this.currentIndex === 0 && prevIndex === textures.length - 1) {
+      deltaRadians = deltaRadians + TAU;
     }
-  
-    this.transitioning = true
-  
-    this.tween = new TWEEN.Tween(carouselGroup.rotation).to({
-      x: 0,
-      y: carouselGroup.rotation.y - deltaRadians,
-      z: 0 
-    }, 500)
-      .easing(TWEEN.Easing.Quadratic.InOut)
-  
-    this.tween.start()
-  
+
+    this.transitioning = true;
+
+    this.tween = new TWEEN.Tween(carouselGroup.rotation)
+      .to(
+        {
+          x: 0,
+          y: carouselGroup.rotation.y - deltaRadians,
+          z: 0,
+        },
+        500
+      )
+      .easing(TWEEN.Easing.Quadratic.InOut);
+
+    this.tween.start();
+
     setTimeout(() => {
-      this.transitioning = false
-    }, 500)
-  }
+      this.transitioning = false;
+    }, 500);
+  };
 
   // kickoff
-  this._init()
-  this._loadTextures() // calls create fns after textures have loaded
+  this._init();
+  this._loadTextures(); // calls create fns after textures have loaded
 }
 
 /**
- * ---------- Utils ---------- 
+ * ---------- Utils ----------
  */
 function accumulateToIndex(arr, index) {
-  let result = 0
+  let result = 0;
 
   for (let i = 0; i < index; i++) {
-    result += arr[i]
+    result += arr[i];
   }
 
-  return result
+  return result;
 }
 
 function rads(deg) {
-  return deg * (Math.PI / 180) 
+  return deg * (Math.PI / 180);
 }
 
 function deg(rads) {
-  return rads * (180 / Math.PI) 
+  return rads * (180 / Math.PI);
 }
 
 // https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
 const fitCameraToCenteredObject = function (camera, object, offset = 0, scene) {
+  const boundingBox = new THREE.Box3().setFromObject(object);
 
-  const boundingBox = new THREE.Box3().setFromObject( object )
+  const center = boundingBox.getCenter(new THREE.Vector3());
+  const size = boundingBox.getSize(new THREE.Vector3());
 
-  const center = boundingBox.getCenter( new THREE.Vector3() )
-  const size = boundingBox.getSize( new THREE.Vector3() )
-
-  const startDistance = center.distanceTo(camera.position)
+  const startDistance = center.distanceTo(camera.position);
   // here we must check if the screen is horizontal or vertical, because camera.fov is
   // based on the vertical direction.
-  const endDistance = camera.aspect > 1 ?
-    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
-    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
+  const endDistance =
+    camera.aspect > 1
+      ? (size.y / 2 + offset) / Math.abs(Math.tan(camera.fov / 2))
+      : (size.y / 2 + offset) /
+        Math.abs(Math.tan(camera.fov / 2)) /
+        camera.aspect;
 
+  camera.position.set(0, 0, (camera.position.z * endDistance) / startDistance);
 
-  camera.position.set(
-    0,
-    0,
-    camera.position.z * endDistance / startDistance,
-  )
-
-  camera.lookAt(0, 0, 0)
-}
+  camera.lookAt(0, 0, 0);
+};
 
 // https://wejn.org/2020/12/cracking-the-threejs-object-fitting-nut/
-const fitCameraToCenteredObject2 = function (camera, object, offset = 0, scene) {
+const fitCameraToCenteredObject2 = function (
+  camera,
+  object,
+  offset = 0,
+  scene
+) {
   const boundingBox = new THREE.Box3();
   boundingBox.setFromObject(object);
 
   var middle = new THREE.Vector3();
   var size = new THREE.Vector3();
   boundingBox.getSize(size);
-  
 
   // figure out how to fit the box in the view:
   // 1. figure out horizontal FOV (on non-1.0 aspects)
@@ -371,17 +401,17 @@ const fitCameraToCenteredObject2 = function (camera, object, offset = 0, scene) 
 };
 
 /**
- * 
- * @param {*} depth 
- * @param {*} camera 
- * @returns 
+ *
+ * @param {*} depth
+ * @param {*} camera
+ * @returns
  */
 const visibleHeightAtZDepth = (depth, camera) => {
   // compensate for cameras not positioned at z=0
   const cameraOffset = camera.position.z;
   if (depth < cameraOffset) depth -= cameraOffset;
   else depth += cameraOffset;
-  console.log('depth: ', depth)
+  console.log("depth: ", depth);
 
   // vertical fov in radians
   const vFOV = (camera.fov * Math.PI) / 180;
