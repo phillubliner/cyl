@@ -176,14 +176,14 @@ export function Cyl(el, options) {
       this.scene.add(box);
     }
 
-    fitCameraToCenteredObject(this.camera, this.carouselGroup, 0, this.scene)
+   fitCameraToCenteredObject2(this.camera, this.carouselGroup, 0, this.scene);
 
     window.addEventListener('resize', () => {
       const renderSize = new THREE.Vector2(el.offsetWidth, el.offsetHeight)
       this.renderer.setSize(renderSize.x, renderSize.y)
       this.camera.aspect = (el.offsetWidth / el.offsetHeight)
       this.camera.updateProjectionMatrix();
-      fitCameraToCenteredObject(this.camera, this.carouselGroup, 0, this.scene)
+      fitCameraToCenteredObject2(this.camera, this.carouselGroup, 0, this.scene);
     })
 
     this._draw()
@@ -282,41 +282,32 @@ function deg(rads) {
 }
 
 // https://discourse.threejs.org/t/camera-zoom-to-fit-object/936/23
-// const fitCameraToCenteredObject = function (camera, object, offset = 1.5) {
+const fitCameraToCenteredObject = function (camera, object, offset = 0, scene) {
 
-//   const boundingBox = new THREE.Box3().setFromObject( object )
+  const boundingBox = new THREE.Box3().setFromObject( object )
 
-//   const center = boundingBox.getCenter( new THREE.Vector3() )
-//   const size = boundingBox.getSize( new THREE.Vector3() )
+  const center = boundingBox.getCenter( new THREE.Vector3() )
+  const size = boundingBox.getSize( new THREE.Vector3() )
 
-//   const startDistance = center.distanceTo(camera.position)
-//   // here we must check if the screen is horizontal or vertical, because camera.fov is
-//   // based on the vertical direction.
-//   const endDistance = camera.aspect > 1 ?
-//     ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
-//     ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
-
-
-//   camera.position.set(
-//     // camera.position.x * endDistance / startDistance,
-//     // camera.position.y * endDistance / startDistance,
-//     0,
-//     0,
-//     camera.position.z * endDistance / startDistance,
-//   )
-
-//   camera.lookAt(0, 0, 0)
-// }
+  const startDistance = center.distanceTo(camera.position)
+  // here we must check if the screen is horizontal or vertical, because camera.fov is
+  // based on the vertical direction.
+  const endDistance = camera.aspect > 1 ?
+    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) :
+    ((size.y/2)+offset) / Math.abs(Math.tan(camera.fov/2)) / camera.aspect 
 
 
+  camera.position.set(
+    0,
+    0,
+    camera.position.z * endDistance / startDistance,
+  )
+
+  camera.lookAt(0, 0, 0)
+}
 
 // https://wejn.org/2020/12/cracking-the-threejs-object-fitting-nut/
-const fitCameraToCenteredObject = function (
-  camera,
-  object,
-  offset = 0,
-  scene
-) {
+const fitCameraToCenteredObject2 = function (camera, object, offset = 0, scene) {
   const boundingBox = new THREE.Box3();
   boundingBox.setFromObject(object);
 
@@ -377,5 +368,29 @@ const fitCameraToCenteredObject = function (
 
   camera.far = cameraToFarEdge * 3;
   camera.updateProjectionMatrix();
+};
 
+/**
+ * 
+ * @param {*} depth 
+ * @param {*} camera 
+ * @returns 
+ */
+const visibleHeightAtZDepth = (depth, camera) => {
+  // compensate for cameras not positioned at z=0
+  const cameraOffset = camera.position.z;
+  if (depth < cameraOffset) depth -= cameraOffset;
+  else depth += cameraOffset;
+  console.log('depth: ', depth)
+
+  // vertical fov in radians
+  const vFOV = (camera.fov * Math.PI) / 180;
+
+  // Math.abs to ensure the result is always positive
+  return 2 * Math.tan(vFOV / 2) * Math.abs(depth);
+};
+
+const visibleWidthAtZDepth = (depth, camera) => {
+  const height = visibleHeightAtZDepth(depth, camera);
+  return height * camera.aspect;
 };
