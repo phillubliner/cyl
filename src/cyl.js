@@ -193,7 +193,7 @@ export function Cyl(el, options) {
     this.time += 0.01
     this.rafId = requestAnimationFrame(this._draw.bind(this))
     TWEEN.update()
-    this.renderer.render(this.scene, this.camera, this.renderTarget)
+    this.renderer.render(this.scene, this.camera)
   }
 
   // nav functions
