@@ -18,7 +18,8 @@ module.exports = {
 		hot: true,
     compress: false,
     port: 8000,
-		writeToDisk: true
+		writeToDisk: true,
+    disableHostCheck: true, // enables ngrok
 	},
   resolve: {
     fallback: {
