@@ -206,16 +206,24 @@ export function Cyl(el, options) {
         1,
         this.scene
       );
+      this.renderer.render(this.scene, this.camera);
     });
 
+    // initial render
+    this.renderer.render(this.scene, this.camera);
+
+    // kickoff recursive draw loop
     this._draw();
   };
 
   this._draw = function () {
     this.time += 0.01;
     this.rafId = requestAnimationFrame(this._draw.bind(this));
-    TWEEN.update();
-    this.renderer.render(this.scene, this.camera);
+
+    if (this.transitioning) {
+      TWEEN.update();
+      this.renderer.render(this.scene, this.camera);
+    }
   };
 
   // nav functions
